@@ -32,7 +32,7 @@ export async function GET() {
     const donations = await contract.getDonations();
 
     // Transform response: Convert BigInt values to strings
-    const formattedDonations = donations.map((donation: { donorId: bigint, date: string, bloodUnitId: BigInt }) => ({
+    const formattedDonations = donations.map((donation: { donorId: bigint, date: string, bloodUnitId: bigint }) => ({
       donorId: donation.donorId.toString(),
       date: donation.date,
       bloodUnitId: donation.bloodUnitId.toString(),
@@ -67,24 +67,27 @@ export async function POST(req: Request) {
 
     console.log("🚀 Submitting donation:", { donorId, date, bloodUnitId });
 
-    // Parse values correctly
+    // Ensure IDs are valid uint256 values
     const parsedDonorId = BigInt(donorId);
     const parsedBloodUnitId = BigInt(bloodUnitId);
+    
     console.log("🆔 Parsed IDs:", { parsedDonorId, parsedBloodUnitId });
 
     const contract = getContract();
-    const tx = await contract.addDonation(parsedDonorId, date, parsedBloodUnitId);
+
+    // Ensure all values are in the correct format
+    const tx = await contract.addDonation(parsedDonorId.toString(), date, parsedBloodUnitId.toString());
+
     console.log("📡 Transaction sent, waiting for confirmation... Hash:", tx.hash);
 
     await tx.wait();
     console.log("✅ Transaction confirmed!");
 
     return NextResponse.json({ success: true, txHash: tx.hash });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error adding donation:", error);
-    return NextResponse.json(
-      { error: "Failed to add donation", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to add donation", details: errorMessage }, { status: 500 });
   }
 }

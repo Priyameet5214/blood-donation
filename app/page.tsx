@@ -134,7 +134,13 @@ export default function Home() {
                 <p className="text-sm text-gray-500">Total Donations</p>
                 <h2 className="text-2xl">{donations.length}</h2>
               </div>
-              <Button onClick={fetchDonors} disabled={loading}>
+              <Button 
+                onClick={() => {
+                  setLoading(true);
+                  Promise.all([fetchDonors(), fetchDonations()]).finally(() => setLoading(false));
+                }} 
+                disabled={loading}
+              >
                 {loading ? "Loading..." : "Refresh Data"}
               </Button>
             </div>
